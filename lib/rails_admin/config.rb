@@ -31,6 +31,9 @@ module RailsAdmin
       # Application title, can be an array of two elements
       attr_accessor :main_app_name
 
+      # Application copyright message
+      attr_accessor :copyright
+
       # Configuration option to specify which models you want to exclude.
       attr_accessor :excluded_models
 
@@ -287,6 +290,7 @@ module RailsAdmin
         @total_columns_width = 697
         @label_methods = [:name, :title]
         @main_app_name = Proc.new { [Rails.application.engine_name.titleize.chomp(' Application'), 'Admin'] }
+        @copyright = 'RailsAdmin 2012'
         @registry = {}
         RailsAdmin::Config::Actions.reset
       end

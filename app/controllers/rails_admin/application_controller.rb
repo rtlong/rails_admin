@@ -14,7 +14,7 @@ module RailsAdmin
     before_filter :_authorize!
     before_filter :_audit!
 
-    helper_method :_current_user, :_attr_accessible_role, :_get_plugin_name
+    helper_method :_current_user, :_attr_accessible_role, :_get_plugin_name, :_copyright_message
 
     attr_reader :object, :model_config, :abstract_model
 
@@ -57,6 +57,10 @@ module RailsAdmin
 
     def _attr_accessible_role
       instance_eval &RailsAdmin::Config.attr_accessible_role
+    end
+
+    def _copyright_message
+      RailsAdmin::Config.copyright
     end
 
     rescue_from RailsAdmin::ObjectNotFound do
