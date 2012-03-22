@@ -35,13 +35,8 @@ module RailsAdmin
         scope = scope.where(query_conditions(options[:query])) if options[:query]
         scope = scope.where(filter_conditions(options[:filters])) if options[:filters]
         scope = scope.page(options[:page]).per(options[:per]) if options[:page] && options[:per]
-        scope = if options[:sort] && options[:sort_reverse]
-          scope.desc(options[:sort])
-        elsif options[:sort]
-          scope.asc(options[:sort])
-        else
-          scope
-        end
+        scope = sort_by(options, scope) if options[:sort]
+        scope
       end
       
       def count(options = {},scope=nil)
@@ -53,7 +48,7 @@ module RailsAdmin
       end
 
       def primary_key
-        :_id
+        '_id'
       end
 
       def associations
@@ -70,7 +65,7 @@ module RailsAdmin
             :polymorphic => association_polymorphic_lookup(association),
             :inverse_of => association_inverse_of_lookup(association),
             :read_only => nil,
-            :nested_form => nil
+            :nested_form => association_nested_attributes_options_lookup(association)
           }
         end
       end
@@ -126,6 +121,10 @@ module RailsAdmin
 
       def encoding
         'UTF-8'
+      end
+
+      def embedded?
+        @embedded ||= !!model.associations.values.find{|a| a.macro.to_sym == :embedded_in }
       end
 
       private
@@ -260,6 +259,10 @@ module RailsAdmin
         end
       end
 
+      def association_nested_attributes_options_lookup(association)
+        model.nested_attributes_options.try { |o| o[association.name.to_sym] }
+      end
+
       def association_as_lookup(association)
         association.as.try :to_sym
       end
@@ -330,6 +333,20 @@ module RailsAdmin
           [{ target_association[:foreign_key].to_s => { '$in' => model.where('$or' => conditions).all.map{|r| r.send(target_association[:primary_key_proc].call)} }}]
         when :has_many
           [{ target_association[:primary_key_proc].call.to_s => { '$in' => model.where('$or' => conditions).all.map{|r| r.send(target_association[:foreign_key])} }}]
+        end
+      end
+
+      def sort_by(options, scope)
+        return scope unless options[:sort]
+        field_name, collection_name = options[:sort].to_s.split('.').reverse
+        if collection_name && collection_name != table_name
+          # sorting by associated model column is not supported, so just ignore
+          return scope
+        end
+        if options[:sort_reverse]
+          scope.desc field_name
+        else
+          scope.asc field_name
         end
       end
     end
